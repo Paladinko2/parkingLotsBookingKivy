@@ -13,7 +13,7 @@ MDScreen:
                 root.manager.transition.direction = "right"
                 root.manager.current = "welcome"
         MDLabel:
-            text: "Добро пожаловать!"
+            text: "Вход"
             font_name: "Montserrat"
             font_size: "26sp"
             bold: True
@@ -21,7 +21,7 @@ MDScreen:
             color: rgba(0, 0, 59, 255)
 
         MDLabel:
-            text: "Зарегистрируйтесь, чтобы продолжить!"
+            text: "Используйте созданный ранее аккаунт, чтобы продолжить"
             font_name: "Montserrat"
             font_size: "18sp"
             bold: True
@@ -32,7 +32,8 @@ MDScreen:
             size_hint: .7, .07
             pos_hint: {"center_x": .5, "center_y": .63}
             TextInput:
-                hint_text: "Login"
+                id: email
+                hint_text: "Эл.почта"
                 font_name: "Montserrat"
                 size_hint_y: .75
                 pos_hint: {"center_x": .43, "center_y": .5}
@@ -52,7 +53,8 @@ MDScreen:
             size_hint: .7, .07
             pos_hint: {"center_x": .5, "center_y": .5}
             TextInput:
-                hint_text: "Password"
+                id: password
+                hint_text: "Пароль"
                 font_name: "Montserrat"
                 size_hint_y: .75
                 pos_hint: {"center_x": .43, "center_y": .5}
@@ -70,13 +72,17 @@ MDScreen:
                 md_bg_color: rgba(178, 178, 178, 255)
 
         Button:
-            text: "LOGIN"
+            text: "Войти"
             font_name: "Montserrat"
             bold: True
             size_hint: .66, .065
             pos_hint: {"center_x": .5, "center_y": .34}
             background_color: 0 , 0, 0, 0
             font_name: "Montserrat"
+            on_release:
+                app.on_login(email.text, password.text)
+                #root.manager.transition.direction = "left"
+                #root.manager.current = "main"
             canvas.before:
                 Color:
                     rgb: rgba(52, 0, 231, 255)
@@ -86,14 +92,14 @@ MDScreen:
                     radius: [5]
 
         MDTextButton:
-            text: "Forgot Password?"
+            text: "Забыли пароль?"
             pos_hint: {"center_x": .5, "center_y": .28}
             color: rgba(68, 78, 132, 255)
             font_size: "12sp"
             font_name: "Montserrat"
 
         MDLabel:
-            text: "or"
+            text: "или"
             color: rgba(52, 0, 231, 255)
             pos_hint: {"center_y": .22}
             font_size: "13sp"
@@ -111,7 +117,7 @@ MDScreen:
             pos_hint: {"center_x": .7, "center_y": .218}
 
         MDLabel:
-            text: "Continue with Google"
+            text: "Продолжить с Google"
             font_name: "Montserrat"
             font_size: "13sp"
             halign: "center"
@@ -126,14 +132,14 @@ MDScreen:
                 source: "data/logo/google.png"
 
         MDLabel:
-            text: "Don`t have an account?"
+            text: "Ещё не зарегистрированы?"
             font_name: "Montserrat"
             font_size: "11sp"
-            pos_hint: {"center_x": .68, "center_y": .04}
+            pos_hint: {"center_x": .63, "center_y": .04}
             color: rgba(135, 133, 193, 255)
 
         MDTextButton:
-            text: "Sign up"
+            text: "Создать аккаунт"
             font_name: "Montserrat"
             font_size: "11sp"
             pos_hint: {"center_x": .75, "center_y": .04}

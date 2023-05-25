@@ -32,9 +32,13 @@ MDScreen:
         MDFloatLayout:
             size_hint: .7, .07
             pos_hint: {"center_x": .5, "center_y": .68}
+
+        MDFloatLayout:
+            size_hint: .7, .07
+            pos_hint: {"center_x": .5, "center_y": .68}
             TextInput:
-                id: username
-                hint_text: "Username"
+                id: email
+                hint_text: "Эл.почта"
                 font_name: "Montserrat"
                 size_hint_y: .75
                 pos_hint: {"center_x": .43, "center_y": .5}
@@ -54,8 +58,8 @@ MDScreen:
             size_hint: .7, .07
             pos_hint: {"center_x": .5, "center_y": .56}
             TextInput:
-                id: email
-                hint_text: "Email"
+                id: password
+                hint_text: "Пароль"
                 font_name: "Montserrat"
                 size_hint_y: .75
                 pos_hint: {"center_x": .43, "center_y": .5}
@@ -65,6 +69,7 @@ MDScreen:
                 font_size: "14sp"
                 cursor_width: "2sp"
                 multiline: False
+                password: True
 
             MDFloatLayout:
                 pos_hint: {"center_x": .45, "center_y": 0}
@@ -75,8 +80,8 @@ MDScreen:
             size_hint: .7, .07
             pos_hint: {"center_x": .5, "center_y": .44}
             TextInput:
-                id: password
-                hint_text: "Password"
+                id: rep_password
+                hint_text: "Подтвердить"
                 font_name: "Montserrat"
                 size_hint_y: .75
                 pos_hint: {"center_x": .43, "center_y": .5}
@@ -94,14 +99,14 @@ MDScreen:
                 md_bg_color: rgba(178, 178, 178, 255)
 
         Button:
-            text: "SIGNUP"
+            text: "Создать аккаунт"
             font_name: "Montserrat"
             bold: True
             size_hint: .66, .065
             pos_hint: {"center_x": .5, "center_y": .3}
             background_color: 0 , 0, 0, 0
             font_name: "Montserrat"
-            on_release: app.on_signup(username.text, email.text, password.text)
+            on_release: app.on_signup(email.text, password.text, rep_password.text)
             canvas.before:
                 Color:
                     rgb: rgba(52, 0, 231, 255)
@@ -111,7 +116,7 @@ MDScreen:
                     radius: [5]
 
         MDLabel:
-            text: "or"
+            text: "или"
             color: rgba(52, 0, 231, 255)
             pos_hint: {"center_y": .22}
             font_size: "13sp"
@@ -129,7 +134,7 @@ MDScreen:
             pos_hint: {"center_x": .7, "center_y": .218}
 
         MDLabel:
-            text: "Continue with Google"
+            text: "Продолжить с Google"
             font_name: "Montserrat"
             font_size: "13sp"
             halign: "center"
@@ -144,14 +149,14 @@ MDScreen:
                 source: "data/logo/google.png"
 
         MDLabel:
-            text: "Already have an account?"
+            text: "Уже зарегистрированы?"
             font_name: "Montserrat"
             font_size: "11sp"
             pos_hint: {"center_x": .68, "center_y": .04}
             color: rgba(135, 133, 193, 255)
 
         MDTextButton:
-            text: "Sign in"
+            text: "Войти"
             font_name: "Montserrat"
             font_size: "11sp"
             pos_hint: {"center_x": .75, "center_y": .04}
