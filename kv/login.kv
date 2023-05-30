@@ -1,5 +1,7 @@
 MDScreen:
     name: "login"
+    email_valid: True
+    password_valid: True
 
     MDFloatLayout:
         md_bg_color: 1, 1, 1, 1
@@ -38,11 +40,13 @@ MDScreen:
                 size_hint_y: .75
                 pos_hint: {"center_x": .43, "center_y": .5}
                 background_color: 1, 1, 1, 0
-                foreground_color: rgba(0, 0, 59, 255)
+                #foreground_color: rgba(0, 0, 59, 255)
+                foreground_color: [1, 0, 0, 1] if not root.email_valid else [0, 0, 0, 1]
                 cursor_color: rgba(0, 0, 59, 255)
                 font_size: "14sp"
                 cursor_width: "2sp"
                 multiline: False
+                on_text_validate: app.validate_email(email.text)
 
             MDFloatLayout:
                 pos_hint: {"center_x": .45, "center_y": 0}
@@ -59,12 +63,14 @@ MDScreen:
                 size_hint_y: .75
                 pos_hint: {"center_x": .43, "center_y": .5}
                 background_color: 1, 1, 1, 0
-                foreground_color: rgba(0, 0, 59, 255)
+                #foreground_color: rgba(0, 0, 59, 255)
+                foreground_color: [1, 0, 0, 1] if not root.password_valid else [0, 0, 0, 1]
                 cursor_color: rgba(0, 0, 59, 255)
                 font_size: "14sp"
                 cursor_width: "2sp"
                 multiline: False
                 password: True
+                on_text_validate: app.validate_password(email.text, password.text)
 
             MDFloatLayout:
                 pos_hint: {"center_x": .45, "center_y": 0}
@@ -81,6 +87,7 @@ MDScreen:
             font_name: "Montserrat"
             on_release:
                 app.on_login(email.text, password.text)
+
                 #root.manager.transition.direction = "left"
                 #root.manager.current = "main"
             canvas.before:
