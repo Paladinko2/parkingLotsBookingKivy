@@ -1,0 +1,28 @@
+<MarkerInfoPopup>:
+    title: root.title
+    BoxLayout:
+        md_bg_color: 1, 1, 1, 1
+        orientation: 'vertical'
+        padding: dp(10)
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            size_hint: 1, None
+            adaptive_height: True
+            spacing: dp(10)
+            MDLabel:
+                text: 'Информация о парковочной зоне'
+                font_style: 'H6'
+            MDLabel:
+                text: 'Номер зоны: ' + root.zone_number
+            MDLabel:
+                text: 'Адрес: ' + root.address
+        MDSeparator:
+            height: dp(1)
+        MDBoxLayout:
+            adaptive_size: True
+            padding: dp(10)
+            spacing: dp(10)
+            MDFillRoundFlatButton:
+                text: 'Закрыть'
+                on_release: root.dismiss()

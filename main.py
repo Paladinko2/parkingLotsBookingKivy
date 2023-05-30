@@ -3,11 +3,14 @@ import datetime
 import re
 from random import random, uniform
 
+from kivy.properties import StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivymd.app import MDApp
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager
@@ -21,8 +24,40 @@ from kivy.clock import Clock
 from firebase import firebase
 
 
+# class MarkerInfoPopup(Popup):
+#     zone_number = StringProperty()
+#     address = StringProperty()
+#
+#     def __init__(self, **kwargs):
+#         super(MarkerInfoPopup, self).__init__(**kwargs)
+#         self.title = 'Парковочная зона'
+#
+#     def dismiss(self):
+#         super(MarkerInfoPopup, self).dismiss()
+
+class MarkerInfoPopup(MDDialog):
+    zone_number = StringProperty()
+    address = StringProperty()
+
+    def __init__(self, **kwargs):
+        super(MarkerInfoPopup, self).__init__(
+            title="Парковочная зона",
+            type="custom",
+            buttons=[
+                MDFlatButton(
+                    text="Close", md_bg_color=(0, 0, 1, 1), text_color=(1, 1, 1, 1), on_release=self.close_dialog
+                ),
+            ],
+            **kwargs
+        )
+
+    def close_dialog(self, *args):
+        self.dismiss()
+
+
 class ParkingApp(MDApp):
     getting_markets_timer = None
+    marker_info_popup = None
 
     def build(self):
         LabelBase.register(name="Montserrat",
@@ -30,6 +65,7 @@ class ParkingApp(MDApp):
                            fn_bold="data/fonts/Montserrat/Montserrat-Bold.ttf",
                            fn_italic="data/fonts/Montserrat/Montserrat-Italic.ttf",
                            fn_bolditalic="data/fonts/Montserrat/Montserrat-BoldItalic.ttf")
+        Builder.load_file("kv/markerinfo.kv")  # Загрузка разметки из файла markerinfo.kv
 
         screen_manager = ScreenManager()
         # screen_manager.add_widget(Builder.load_file("kv/welcome.kv"))
@@ -58,34 +94,56 @@ class ParkingApp(MDApp):
                 marker = MapMarkerPopup(lat=marks[i]["Lat"], lon=marks[i]["Lon"])
 
                 button = Button(text="Получить информацию")
-                button.bind(on_release=lambda btn: self.show_marker_info(marker))
+                button.bind(on_release=lambda btn, marker_info=marks[i]: self.show_marker_info(marker_info))
 
                 marker.add_widget(button)
                 self.mv().add_widget(marker)
 
-
-
-        # for i in range(5):
+        # for i in range(1, 3):
         #     lat = uniform(55.13, 55.23)
         #     lon = uniform(30.1, 30.3)
-        #     marks = {
+        #     mark = {
         #         "Lat": lat,
         #         "Lon": lon,
+        #         "Number": self.distinct_zone_numbers(),
+        #         "Address": "Vitebsk, etc.."
         #     }
-        #     self.post_marks(marks)
+        #     self.post_marks(mark)
+
         pass
+
+    def distinct_zone_numbers(self):
+        marks = self.get_marks()
+        numbers = []
+        return_num = 0
+        if marks is not None:
+            numbers = [mark["Number"] for mark in marks.values()]
+            print(numbers)
+            for i in range(1, len(marks) + 2):
+                if i not in numbers:
+                    return_num = i
+        else:
+            return_num = 1
+        return return_num
+
+    # def show_marker_info(self, marker):
+    #     if self.marker_info_popup:  # Закрытие предыдущего экземпляра MarkerInfoPopup
+    #         self.marker_info_popup.dismiss()
+    #
+    #     self.marker_info_popup = MarkerInfoPopup()
+    #     self.marker_info_popup.zone_number = str(marker["Number"])
+    #     self.marker_info_popup.address = marker["Address"]
+    #     self.marker_info_popup.open()
 
     def show_marker_info(self, marker):
-        info_layout = BoxLayout(orientation='vertical')
-        info_layout.add_widget(Label(text='Информация о парковочной зоне'))
-        info_layout.add_widget(Label(text='Номер зоны: '))
-        info_layout.add_widget(Label(text='Адрес: '))
-        info_layout.add_widget(Button(text='Закрыть', on_release=lambda btn: popup.dismiss()))
+        if self.marker_info_popup:  # Закрытие предыдущего экземпляра MarkerInfoPopup
+            self.marker_info_popup.dismiss()
 
-        popup = Popup(title='Парковочная зона', content=info_layout)
-        popup.open()
-
-        pass
+        self.marker_info_popup = MarkerInfoPopup(
+            zone_number=str(marker["Number"]),
+            address=marker["Address"]
+        )
+        self.marker_info_popup.open()
 
     def start_getting_markets_in_fov(self):
         try:
@@ -97,11 +155,6 @@ class ParkingApp(MDApp):
 
     def get_markets_in_fov(self, *args):
         print(self.mv().get_bbox())
-
-    #def on_double_tap(self, mapview, touch):
-    #    latitude, longitude = touch.lat, touch.lon
-    #    print("Latitude:", latitude)
-    #    print("Longitude:", longitude)
 
     # MapView
     def mv(self):
@@ -243,7 +296,3 @@ if __name__ == "__main__":
     #     print(f"Booking parking lot: {selected_parking_lot}")
     #     print(f"Date: {selected_date}")
     #     print(f"Time: {selected_time}")
-
-if __name__ == "__main__":
-    Window.size = (360, 640)
-    ParkingApp().run()

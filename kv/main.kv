@@ -1,0 +1,128 @@
+MDScreen:
+    name: "main"
+
+    MDNavigationLayout:
+
+        MDScreenManager:
+            id: main_screen_manager
+
+            MDScreen:
+                id: map
+
+                MDFloatLayout:
+                    md_bg_color: 1, 1, 1, 1
+
+                    MapView:
+                        id: map_view
+                        lat: 55.178151
+                        lon: 30.235253
+                        zoom: 14
+                        double_tap_zoom: True
+
+                        on_lat:
+                            #print("lat", self.lat)
+                            app.start_getting_markets_in_fov()
+                        on_lon:
+                            #print("lon", self.lon)
+                            app.start_getting_markets_in_fov()
+
+                        on_zoom:
+                            self.zoom = 10 if self.zoom < 10 else self.zoom
+
+                        #on_double_tap:
+                        #    app.on_map_released(self, self.get_latlon(*args))
+
+                        MapMarkerPopup:
+                            #source: ""
+                            lat: 55.178210
+                            lon: 30.237055
+
+                            Button:
+                                on_release:
+                                    map_view.center_on(55.1, 29.8)
+
+
+                    MDBottomAppBar:
+
+                        MDTopAppBar:
+                            title: "Главная"
+                            icon: "magnify-plus"
+                            type: "bottom"
+                            left_action_items: [["menu", lambda x: nav_drawer.set_state("open")]]
+                            on_action_button: app.callback(self.icon)
+                            mode: "end"
+                            elevation: 2
+
+            MDScreen:
+                id: booking
+
+                MDFloatLayout:
+                    md_bg_color: 1, 1, 1, 1
+
+                    MDBottomAppBar:
+
+                        MDTopAppBar:
+                            title: "Главная"
+                            icon: "magnify-plus"
+                            type: "bottom"
+                            left_action_items: [["menu", lambda x: nav_drawer.set_state("open")]]
+                            on_action_button: app.callback(self.icon)
+                            mode: "end"
+                            elevation: 2
+
+        MDNavigationDrawer:
+            id: nav_drawer
+            radius: (0, 16, 16, 0)
+
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: "8dp"
+                #padding: "8dp"
+
+                IconRightWidget:
+                    icon: "arrow-left"
+
+                MDIcon:
+                    icon: "data/logo/garage.png"
+                    pos_hint: {"center_x": .5, "center_y": .65}
+                    font_size: "96sp"
+
+                MDLabel:
+                    text: "Username"
+                    font_name: "Montserrat"
+                    font_size: "18sp"
+                    bold: True
+                    color: rgba(135, 133, 193, 255)
+                    height: self.texture_size[1]
+                    size_hint_y: None
+
+                MDLabel:
+                    text: "Email"
+                    font_name: "Montserrat"
+                    font_size: "18sp"
+                    bold: True
+                    color: rgba(135, 133, 193, 255)
+                    height: self.texture_size[1]
+                    size_hint_y: None
+
+                ScrollView:
+                    MDList:
+                        OneLineIconListItem:
+                            text: "Аккаунт"
+                            IconLeftWidget:
+                                icon: "account"
+
+                        OneLineIconListItem:
+                            #on_release: app.on_()
+                            text: "Мои брони"
+                            IconLeftWidget:
+                                icon: "format-list-bulleted"
+
+                        OneLineIconListItem:
+                            on_release:
+                                nav_drawer.set_state("close")
+                                root.manager.transition.direction = "right"
+                                root.manager.current = "welcome"
+                            text: "Выйти"
+                            IconLeftWidget:
+                                icon: "logout"
