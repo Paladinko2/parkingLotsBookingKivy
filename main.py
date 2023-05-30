@@ -9,7 +9,7 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivymd.app import MDApp
-from kivymd.uix.button import MDFlatButton
+from kivymd.uix.button import MDFlatButton, MDFillRoundFlatButton, MDFloatingActionButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivy.core.window import Window
@@ -23,17 +23,6 @@ from kivy.clock import Clock
 
 from firebase import firebase
 
-
-# class MarkerInfoPopup(Popup):
-#     zone_number = StringProperty()
-#     address = StringProperty()
-#
-#     def __init__(self, **kwargs):
-#         super(MarkerInfoPopup, self).__init__(**kwargs)
-#         self.title = 'Парковочная зона'
-#
-#     def dismiss(self):
-#         super(MarkerInfoPopup, self).dismiss()
 
 class MarkerInfoPopup(MDDialog):
     zone_number = StringProperty()
@@ -96,7 +85,30 @@ class ParkingApp(MDApp):
             for i in marks.keys():
                 marker = MapMarkerPopup(lat=marks[i]["Lat"], lon=marks[i]["Lon"])
 
-                button = Button(text="Получить информацию")
+                # button = Button(text="Получить информацию")
+                # button = MDFillRoundFlatButton(text=str(marks[i]["Available"]), font_style='H6')
+                button = MDFloatingActionButton(
+                    icon='',
+                    text=str(marks[i]["Available"]),
+                    font_style='H6',
+                    text_color=(1, 1, 1, 1),
+                    size_hint=(None, None),
+                    size=('56dp', '56dp'),
+                )
+
+                label = Label(
+                    text=button.text,
+                    font_size=button.font_size,
+                    halign='center',
+                    valign='middle',
+                    size_hint=(None, None),
+                    size=button.size,
+                    pos=button.pos,
+                    color=button.text_color,
+                )
+
+                button.add_widget(label)
+
                 button.bind(on_release=lambda btn, marker_info=marks[i]: self.show_marker_info(marker_info))
 
                 marker.add_widget(button)
