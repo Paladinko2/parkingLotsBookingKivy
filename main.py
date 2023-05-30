@@ -38,18 +38,21 @@ from firebase import firebase
 class MarkerInfoPopup(MDDialog):
     zone_number = StringProperty()
     address = StringProperty()
+    lots = StringProperty()
+    av_lots = StringProperty()
 
     def __init__(self, **kwargs):
         super(MarkerInfoPopup, self).__init__(
             title="Парковочная зона",
             type="custom",
-            buttons=[
-                MDFlatButton(
-                    text="Close", md_bg_color=(0, 0, 1, 1), text_color=(1, 1, 1, 1), on_release=self.close_dialog
-                ),
-            ],
+            # buttons=[
+            #     MDFlatButton(
+            #         text="Close", md_bg_color=(0, 0, 1, 1), text_color=(1, 1, 1, 1), on_release=self.close_dialog
+            #     ),
+            # ],
             **kwargs
         )
+        self.size_hint = (0.8, 0.8)
 
     def close_dialog(self, *args):
         self.dismiss()
@@ -99,14 +102,19 @@ class ParkingApp(MDApp):
                 marker.add_widget(button)
                 self.mv().add_widget(marker)
 
-        # for i in range(1, 3):
+        # for i in range(1, 10):
         #     lat = uniform(55.13, 55.23)
         #     lon = uniform(30.1, 30.3)
+        #     lots = int(uniform(10, 30))
+        #     av_lots = int(uniform(0, lots))
+        #
         #     mark = {
         #         "Lat": lat,
         #         "Lon": lon,
         #         "Number": self.distinct_zone_numbers(),
-        #         "Address": "Vitebsk, etc.."
+        #         "Address": "Vitebsk, etc..",
+        #         "Lots": lots,
+        #         "Available": av_lots
         #     }
         #     self.post_marks(mark)
 
@@ -118,7 +126,7 @@ class ParkingApp(MDApp):
         return_num = 0
         if marks is not None:
             numbers = [mark["Number"] for mark in marks.values()]
-            print(numbers)
+            # print(numbers)
             for i in range(1, len(marks) + 2):
                 if i not in numbers:
                     return_num = i
@@ -126,22 +134,14 @@ class ParkingApp(MDApp):
             return_num = 1
         return return_num
 
-    # def show_marker_info(self, marker):
-    #     if self.marker_info_popup:  # Закрытие предыдущего экземпляра MarkerInfoPopup
-    #         self.marker_info_popup.dismiss()
-    #
-    #     self.marker_info_popup = MarkerInfoPopup()
-    #     self.marker_info_popup.zone_number = str(marker["Number"])
-    #     self.marker_info_popup.address = marker["Address"]
-    #     self.marker_info_popup.open()
-
     def show_marker_info(self, marker):
         if self.marker_info_popup:  # Закрытие предыдущего экземпляра MarkerInfoPopup
             self.marker_info_popup.dismiss()
 
         self.marker_info_popup = MarkerInfoPopup(
             zone_number=str(marker["Number"]),
-            address=marker["Address"]
+            address=marker["Address"],
+            av_lots=str(marker["Available"]),
         )
         self.marker_info_popup.open()
 
