@@ -1,25 +1,12 @@
 MDScreen:
-    name: 'booking_screen'
-
     BoxLayout:
-        orientation: 'vertical'
+        orientation: "vertical"
+
+        MDTopAppBar:
+            title: "Мои брони"
+            elevation: 2
 
         ScrollView:
             MDList:
                 id: parking_list
 
-                ParkingListItem:
-                    name: 'Parking Space 1'
-                    location: 'Location 1'
-
-                ParkingListItem:
-                    name: 'Parking Space 2'
-                    location: 'Location 2'
-
-                ParkingListItem:
-                    name: 'Parking Space 3'
-                    location: 'Location 3'
-
-<ParkingListItem@OneLineListItem>:
-    text: root.name if root.name else ''
-    on_release: app.show_parking_info(root.name, root.location) if root.name else None

@@ -1,7 +1,7 @@
 import datetime
 
 import re
-from random import random, uniform
+from random import random, uniform, choice
 
 from kivy.properties import StringProperty
 from kivy.uix.boxlayout import BoxLayout
@@ -20,8 +20,11 @@ from kivymd.uix.pickers import MDDatePicker, MDTimePicker
 from kivy_garden.mapview import MapView, MapMarkerPopup
 from kivymd.uix.navigationdrawer import MDNavigationDrawerItem
 from kivy.clock import Clock
+from kivymd.font_definitions import theme_font_styles
 
 from firebase import firebase
+
+from geopy.geocoders import Nominatim
 
 
 class MarkerInfoPopup(MDDialog):
@@ -29,27 +32,31 @@ class MarkerInfoPopup(MDDialog):
     address = StringProperty()
     lots = StringProperty()
     av_lots = StringProperty()
+    app = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, parking_app, **kwargs):
         super(MarkerInfoPopup, self).__init__(
             title="Парковочная зона",
             type="custom",
-            # buttons=[
-            #     MDFlatButton(
-            #         text="Close", md_bg_color=(0, 0, 1, 1), text_color=(1, 1, 1, 1), on_release=self.close_dialog
-            #     ),
-            # ],
             **kwargs
         )
         self.size_hint = (0.8, 0.8)
+        self.app = parking_app
 
     def close_dialog(self, *args):
         self.dismiss()
+
+    def book(self, zone_number):
+        self.app.book(zone_number)
 
 
 class ParkingApp(MDApp):
     getting_markets_timer = None
     marker_info_popup = None
+    user = {
+        "Email": "admin",
+        "Password": "admin"
+    }
 
     def build(self):
         LabelBase.register(name="Montserrat",
@@ -57,7 +64,7 @@ class ParkingApp(MDApp):
                            fn_bold="data/fonts/Montserrat/Montserrat-Bold.ttf",
                            fn_italic="data/fonts/Montserrat/Montserrat-Italic.ttf",
                            fn_bolditalic="data/fonts/Montserrat/Montserrat-BoldItalic.ttf")
-        Builder.load_file("kv/markerinfo.kv")  # Загрузка разметки из файла markerinfo.kv
+        Builder.load_file("kv/markerinfo.kv")
 
         screen_manager = ScreenManager()
         # screen_manager.add_widget(Builder.load_file("kv/welcome.kv"))
@@ -73,20 +80,16 @@ class ParkingApp(MDApp):
         return screen_manager
 
     def on_start(self):
-        # marker = MapMarkerPopup(lat=55.194698, lon=30.187438)
-
         marks = self.get_marks()
-        # print(marks.keys())
-        # if marks is not None:
-        #     for i in marks.keys():
-        #         self.mv().add_widget(MapMarkerPopup(lat=marks[i]["Lat"], lon=marks[i]["Lon"]))
+        print(marks.keys())
+        if marks is not None:
+            for i in marks.keys():
+                self.mv().add_widget(MapMarkerPopup(lat=marks[i]["Lat"], lon=marks[i]["Lon"]))
 
         if marks is not None:
             for i in marks.keys():
                 marker = MapMarkerPopup(lat=marks[i]["Lat"], lon=marks[i]["Lon"])
 
-                # button = Button(text="Получить информацию")
-                # button = MDFillRoundFlatButton(text=str(marks[i]["Available"]), font_style='H6')
                 button = MDFloatingActionButton(
                     icon='',
                     text=str(marks[i]["Available"]),
@@ -124,13 +127,76 @@ class ParkingApp(MDApp):
         #         "Lat": lat,
         #         "Lon": lon,
         #         "Number": self.distinct_zone_numbers(),
-        #         "Address": "Vitebsk, etc..",
-        #         "Lots": lots,
-        #         "Available": av_lots
+        #         "Address": self.get_address(lat, lon),
+        #         "LotsNumber": lots,
+        #         "Available": av_lots,
+        #         "Lots": self.make_lots(av_lots, lots)
         #     }
         #     self.post_marks(mark)
 
         pass
+
+    def book(self, zone_number):
+        mark = self.get_mark_by_num(zone_number)
+        if mark is not None and mark[1]["Available"] > 0:
+            key, val = mark
+
+            # print(val)
+            # print(mark[1]["Lots"][2])
+            # print(mark[1]["Available"])
+
+            for i in range(len(val["Lots"])):
+                if val["Lots"][i]["Status"] == "Available":
+                    val["Lots"][i]["Status"] = "Not available"
+                    mark[1]["Available"] = mark[1]["Available"] - 1
+                    mark[1]["Lots"][i] = val["Lots"][i]
+                    break
+
+            # print(val)
+            # print(mark[1]["Lots"][2])
+            # print(mark[1]["Available"])
+
+            booking = self.get_booking_by_email(self.user["Email"])
+            k, v = booking
+
+
+            booking_data = {
+                "Email": self.user["Email"],
+                "List": []
+            }
+
+            self.update_mark(key, val)
+
+        else:
+            # Нет свободных мест
+            print("Empty parking zone!")
+
+    def update_mark(self, key, mark_data):
+        connection = self.db()
+        connection.put("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Marks",
+                       key, mark_data)
+
+    def get_bookings(self):
+        connection = self.db()
+        bookings = connection.get("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app"
+                                  "/Bookings", "")
+        return bookings
+
+    def get_booking_by_email(self, email):
+        bookings = self.get_bookings()
+        for key, booking in bookings.items():
+            if booking["Email"] == email:
+                return key, booking
+
+    def post_booking(self, booking_data):
+        connection = self.db()
+        connection.post("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Bookings",
+                        booking_data)
+
+    def update_booking(self, key, booking_data):
+        connection = self.db()
+        connection.put("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Bookings", key,
+                       booking_data)
 
     def distinct_zone_numbers(self):
         marks = self.get_marks()
@@ -151,6 +217,7 @@ class ParkingApp(MDApp):
             self.marker_info_popup.dismiss()
 
         self.marker_info_popup = MarkerInfoPopup(
+            parking_app=self,
             zone_number=str(marker["Number"]),
             address=marker["Address"],
             av_lots=str(marker["Available"]),
@@ -186,6 +253,10 @@ class ParkingApp(MDApp):
 
         if self.validate_email(email) and self.validate_password(email, password):
             print(email + " Вы вошли!")
+            self.user = {
+                "Email": email,
+                "Password": password
+            }
             self.root.current = "main"
         else:
             print("Ошибка входа")
@@ -225,7 +296,11 @@ class ParkingApp(MDApp):
                 "RegistrationDateTime": datetime.datetime.now()
             }
 
-            self.post_users(user_data)
+            self.post_user(user_data)
+            self.user = {
+                "Email": email,
+                "Password": password
+            }
             self.root.current = "main"
         else:
             print("Ошибка регистрации!")
@@ -246,15 +321,21 @@ class ParkingApp(MDApp):
                                "")
         return marks
 
-    def post_users(self, user_data):
+    def get_mark_by_num(self, num):
+        marks = self.get_marks()
+        for key, mark in marks.items():
+            if mark["Number"] == int(num):
+                return key, mark
+
+    def post_user(self, user_data):
         connection = self.db()
         connection.post("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Users",
                         user_data)
 
-    def post_marks(self, marks_data):
+    def post_mark(self, mark_data):
         connection = self.db()
         connection.post("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Marks",
-                        marks_data)
+                        mark_data)
 
     def get_emails(self):
         users = self.get_users()
@@ -275,6 +356,25 @@ class ParkingApp(MDApp):
                     return True
         self.root.password_valid = False
         return False
+
+    def get_address(self, latitude, longitude):
+        geolocator = Nominatim(user_agent="my_app")  # Создаем экземпляр геокодера
+        location = geolocator.reverse(f"{latitude}, {longitude}")  # Получаем обратную геокодировку
+        address = location.address  # Извлекаем адрес из результата
+        return address
+
+    def make_lots(self, av_lots, lots):
+        types = ["Motorcycle", "Car", "Truck"]
+        status = "Not available"
+        lots_array = []
+        for i in range(lots):
+            if i >= lots - av_lots and status != "Available":
+                status = "Available"
+            lots_array.append({
+                "Status": status,
+                "Type": choice(types)
+            })
+        return lots_array
 
 
 if __name__ == "__main__":

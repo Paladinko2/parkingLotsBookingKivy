@@ -4,49 +4,63 @@
     MDBoxLayout:
         md_bg_color: 1, 1, 1, 1
         orientation: 'vertical'
-        padding: dp(20)
+        padding: dp(10)
         radius: [20, 20, 20, 20]
 
         MDBoxLayout:
+            md_bg_color: 1, 1, 1, 1
             orientation: 'vertical'
-            size_hint: 1, None
-            #spacing: dp(1)
+            padding: dp(20)
+            radius: [20, 20, 20, 20]
 
-            Widget:
-                size_hint_y: None
-                height: dp(10)
+            MDBoxLayout:
+                orientation: 'vertical'
+                size_hint: 1, None
+                spacing: dp(13)
 
-            MDLabel:
-                text: 'Информация о парковочной зоне'
-                font_style: 'H6'
+                MDLabel:
+                    text: 'Информация о парковочной зоне'
+                    font_style: 'H6'
+                    size_hint_y: None
+                    height: self.texture_size[1]
 
-            Widget:
-                size_hint_y: None
-                height: dp(20)
+                MDSeparator:
+                    height: dp(2)
 
-            MDSeparator:
-                height: dp(2)
+                MDLabel:
+                    text: 'Номер парковки: ' + root.zone_number
+                    size_hint_y: None
+                    height: self.texture_size[1]
 
-            Widget:
-                size_hint_y: None
-                height: dp(10)
+                MDLabel:
+                    text: 'Адрес: ' + root.address
+                    size_hint_y: None
+                    height: self.texture_size[1]
 
-            MDLabel:
-                text: 'Номер парковки: ' + root.zone_number
+                MDLabel:
+                    text: 'Кол-во свободных мест: ' + root.av_lots
+                    size_hint_y: None
+                    height: self.texture_size[1]
 
-            Widget:
-                size_hint_y: None
-                height: dp(10)
-
-            MDLabel:
-                text: 'Адрес: ' + root.address
-
-            Widget:
-                size_hint_y: None
-                height: dp(10)
-
-            MDLabel:
-                text: 'Кол-во свободных мест: ' + root.av_lots
+            #MDSegmentedControl:
+            #    pos_hint: {"center_x": .5, "center_y": .5}
+            #    size_hint_x: None
+            #
+            #    MDSegmentedControlItem:
+            #        text: "C"
+            #        #icon: "car"
+            #        width: "20dp"
+            #        size_hint_x: None
+            #
+            #    MDSegmentedControlItem:
+            #        text: "M"
+            #        width: "20dp"
+            #        size_hint_x: None
+            #
+            #    MDSegmentedControlItem:
+            #        text: "T"
+            #        width: "20dp"
+            #        size_hint_x: None
 
         MDBoxLayout:
             padding: dp(10)
@@ -54,7 +68,7 @@
 
             MDFillRoundFlatButton:
                 text: 'Забронировать'
-                on_release: root.dismiss()
+                on_release: root.book(root.zone_number)
 
             MDFillRoundFlatButton:
                 text: 'Закрыть'
