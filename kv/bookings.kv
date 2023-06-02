@@ -1,0 +1,22 @@
+MDScreen:
+    name: "bookings"
+    BoxLayout:
+        orientation: 'vertical'
+
+        MDTopAppBar:
+            title: 'Мои бронирования'
+            left_action_items: [["arrow-left", lambda x: app.go_to_main_screen()]]
+            right_action_items: [["reload", lambda x: app.update_bookings_list()]]
+            elevation: 3
+
+        ScrollView:
+            MDList:
+                id: bookings_list
+
+                OneLineListItem:
+                    text: 'Бронирование 1'
+                    on_release: app.view_booking(1)
+
+                OneLineListItem:
+                    text: 'Бронирование 2'
+                    on_release: app.view_booking(2)

@@ -29,17 +29,14 @@ MDScreen:
                         on_zoom:
                             self.zoom = 10 if self.zoom < 10 else self.zoom
 
-                        #on_double_tap:
-                        #    app.on_map_released(self, self.get_latlon(*args))
+                        #MapMarkerPopup:
+                        #    #source: ""
+                        #    lat: 55.178210
+                        #    lon: 30.237055
 
-                        MapMarkerPopup:
-                            #source: ""
-                            lat: 55.178210
-                            lon: 30.237055
-
-                            Button:
-                                on_release:
-                                    map_view.center_on(55.1, 29.8)
+                        #    Button:
+                        #        on_release:
+                        #            map_view.center_on(55.1, 29.8)
 
 
                     MDBottomAppBar:
@@ -113,7 +110,9 @@ MDScreen:
                                 icon: "account"
 
                         OneLineIconListItem:
-                            #on_release: app.on_()
+                            on_release:
+                                nav_drawer.set_state("close")
+                                app.open_bookings()
                             text: "Мои брони"
                             IconLeftWidget:
                                 icon: "format-list-bulleted"
