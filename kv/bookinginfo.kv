@@ -1,0 +1,55 @@
+<BookingInfoPopup>:
+    title: 'Информация о бронировании'
+
+    MDBoxLayout:
+        md_bg_color: 1, 1, 1, 1
+        orientation: 'vertical'
+        padding: dp(10)
+        radius: [20, 20, 20, 20]
+
+        MDBoxLayout:
+            md_bg_color: 1, 1, 1, 1
+            orientation: 'vertical'
+            padding: dp(20)
+            radius: [20, 20, 20, 20]
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                size_hint: 1, 0.45
+                spacing: dp(10)
+
+                MDLabel:
+                    text: 'Информация о бронировании'
+                    font_style: 'H6'
+                    size_hint_y: None
+                    height: self.texture_size[1]
+
+                MDSeparator:
+                    height: dp(2)
+
+                MDLabel:
+                    text: 'Зона: ' + root.zone
+                    size_hint_y: None
+                    height: self.texture_size[1]
+
+                MDLabel:
+                    text: 'Место №: ' + root.lot
+                    size_hint_y: None
+                    height: self.texture_size[1]
+
+                MDLabel:
+                    text: 'Дата: ' + root.date
+                    size_hint_y: None
+                    height: self.texture_size[1]
+
+            MDBoxLayout:
+                padding: dp(10)
+                spacing: dp(10)
+
+                MDFillRoundFlatButton:
+                    text: 'Отменить'
+                    on_release: root.cancel_booking()
+
+                MDFillRoundFlatButton:
+                    text: 'Закрыть'
+                    on_release: root.dismiss()

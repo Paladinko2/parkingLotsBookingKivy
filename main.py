@@ -6,8 +6,10 @@ from random import random, uniform, choice
 from kivy.properties import StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
+from kivy.uix.recycleview import RecycleView
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.button import MDFlatButton, MDFillRoundFlatButton, MDFloatingActionButton, MDIconButton
@@ -54,6 +56,27 @@ class MarkerInfoPopup(MDDialog):
         self.app.book(zone_number)
 
 
+class BookingInfoPopup(MDDialog):
+    zone = StringProperty()
+    lot = StringProperty()
+    date = StringProperty()
+    app = None
+
+    def __init__(self, parking_app, **kwargs):
+        super(BookingInfoPopup, self).__init__(**kwargs)
+        self.size_hint = (0.8, 0.8)
+        self.app = parking_app
+
+    def show_booking_info(self, zone, lot, date):
+        self.zone = zone
+        self.lot = lot
+        self.date = date
+        self.open()
+
+    def cancel_booking(self):
+        self.app.cancel_booking(self.zone, self.lot)
+
+
 class ParkingApp(MDApp):
     getting_markets_timer = None
     marker_info_popup = None
@@ -69,6 +92,7 @@ class ParkingApp(MDApp):
                            fn_italic="data/fonts/Montserrat/Montserrat-Italic.ttf",
                            fn_bolditalic="data/fonts/Montserrat/Montserrat-BoldItalic.ttf")
         Builder.load_file("kv/markerinfo.kv")
+        Builder.load_file("kv/bookinginfo.kv")
 
         screen_manager = ScreenManager()
         # screen_manager.add_widget(Builder.load_file("kv/welcome.kv"))
@@ -399,57 +423,26 @@ class ParkingApp(MDApp):
     def open_bookings(self):
         booking_list = self.get_booking_by_email(self.user["Email"])
         key, val = booking_list
+        self.bkgs().clear_widgets()
+
         for item in val["List"]:
-            lot = item["Lot"]
+            lot = str(item["Lot"])
             zone = item["Zone"]
+            # date = item["Date"]
+            date = "04.06.23"
 
-            booking_item = OneLineListItem()
-
-            container = BoxLayout(orientation='horizontal', spacing='10dp')
-
-            booking_text = f'Зона: {zone}, Место №: {lot}'
-            booking_label = MDLabel(text=booking_text)
-
-            # cancel_button = MDFlatButton(text="Отменить", theme_text_color="Custom",
-            #                              text_color=(0, 0.478, 1, 1), size_hint=(None, None),
-            #                              size=('100dp', '48dp'), halign="center")
-
-            cancel_button = MDFillRoundFlatButton(
-                icon='',
-                text="Отменить",
-                font_style='H6',
-                text_color=(1, 1, 1, 1),
-                size_hint=(None, None),
-                width="48dp",
-                height="48dp"
-            )
-
-            # label = Label(
-            #     text=cancel_button.text,
-            #     font_size=cancel_button.font_size,
-            #     halign='center',
-            #     valign='middle',
-            #     size_hint=(None, None),
-            #     size=cancel_button.size,
-            #     pos=cancel_button.pos,
-            #     color=cancel_button.text_color,
-            # )
-
-            # cancel_button.add_widget(label)
-
-            cancel_button.bind(on_release=lambda x, booking_i=item: self.cancel_booking(booking_i))
-
-            # booking_item.on_release = lambda x, booking_i=item: self.view_booking(booking_i)
-
-            container.add_widget(booking_label)
-            container.add_widget(cancel_button)
-
-            booking_item.add_widget(container)
+            booking_text = f'Зона: {zone}, Место №: {lot}, Дата: {date}'
+            booking_item = OneLineListItem(text=booking_text)
+            booking_item.bind(on_release=lambda instance: self.show_booking_info(zone, lot, date))
 
             self.bkgs().add_widget(booking_item)
 
         self.root.transition.direction = "left"
         self.root.current = "bookings"
+
+    def show_booking_info(self, zone, lot, date):
+        popup = BookingInfoPopup(self, zone=zone, lot=lot, date=date)
+        popup.open()
 
     def update_bookings_list(self):
         self.bkgs().clear_widgets()
