@@ -48,7 +48,10 @@
 
                 MDFillRoundFlatButton:
                     text: 'Отменить'
-                    on_release: root.cancel_booking()
+                    on_release:
+                        root.cancel_booking(root.zone, root.lot)
+                        app.update_bookings_list()
+                        root.dismiss()
 
                 MDFillRoundFlatButton:
                     text: 'Закрыть'

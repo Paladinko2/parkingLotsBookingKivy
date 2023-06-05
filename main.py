@@ -38,6 +38,8 @@ class MarkerInfoPopup(MDDialog):
     address = StringProperty()
     lots = StringProperty()
     av_lots = StringProperty()
+    date = None
+    range = None
     app = None
 
     def __init__(self, parking_app, **kwargs):
@@ -52,8 +54,26 @@ class MarkerInfoPopup(MDDialog):
     def close_dialog(self, *args):
         self.dismiss()
 
+    def show_datepicker(self):
+        picker = MDDatePicker(min_date=datetime.date.today(), max_date=datetime.date(
+            datetime.date.today().year,
+            datetime.date.today().month,
+            datetime.date.today().day + 7,
+        ))
+        picker.bind(on_save=self.on_save, on_cancel=self.on_cancel)
+        picker.open()
+
     def book(self, zone_number):
-        self.app.book(zone_number)
+        if self.date:
+            self.app.book(zone_number, self.date)
+
+    def on_save(self, instance, value, date_range):
+        self.date = value
+        self.range = date_range
+        # print(instance, value, date_range)
+
+    def on_cancel(self, instance, value):
+        pass
 
 
 class BookingInfoPopup(MDDialog):
@@ -73,8 +93,8 @@ class BookingInfoPopup(MDDialog):
         self.date = date
         self.open()
 
-    def cancel_booking(self):
-        self.app.cancel_booking(self.zone, self.lot)
+    def cancel_booking(self, zone_number, lot_number):
+        self.app.cancel_booking(zone_number, lot_number)
 
 
 class ParkingApp(MDApp):
@@ -84,6 +104,7 @@ class ParkingApp(MDApp):
         "Email": "admin",
         "Password": "admin"
     }
+    buttons = {}
 
     def build(self):
         LabelBase.register(name="Montserrat",
@@ -98,8 +119,8 @@ class ParkingApp(MDApp):
         # screen_manager.add_widget(Builder.load_file("kv/welcome.kv"))
         # screen_manager.add_widget(Builder.load_file("kv/login.kv"))
         # screen_manager.add_widget(Builder.load_file("kv/signup.kv"))
-        screen_manager.add_widget(Builder.load_file("kv/bookings.kv"))
         screen_manager.add_widget(Builder.load_file("kv/main.kv"))
+        screen_manager.add_widget(Builder.load_file("kv/bookings.kv"))
 
         # screen_manager.add_widget(Builder.load_file("kv/test.kv"))
 
@@ -108,8 +129,30 @@ class ParkingApp(MDApp):
         return screen_manager
 
     def on_start(self):
+
+        self.open_map()
+
+        # for i in range(1, 10):
+        #     lat = uniform(55.13, 55.23)
+        #     lon = uniform(30.1, 30.3)
+        #     lots = int(uniform(10, 30))
+        #     av_lots = int(uniform(0, lots))
+        #
+        #     mark = {
+        #         "Lat": lat,
+        #         "Lon": lon,
+        #         "Number": self.distinct_zone_numbers(),
+        #         "Address": self.get_address(lat, lon),
+        #         "LotsNumber": lots,
+        #         "Available": av_lots,
+        #         "Lots": self.make_lots(av_lots, lots)
+        #     }
+        #     self.post_marks(mark)
+
+        pass
+
+    def open_map(self):
         marks = self.get_marks()
-        print(marks.keys())
         if marks is not None:
             for i in marks.keys():
                 self.mv().add_widget(MapMarkerPopup(lat=marks[i]["Lat"], lon=marks[i]["Lon"]))
@@ -145,26 +188,9 @@ class ParkingApp(MDApp):
                 marker.add_widget(button)
                 self.mv().add_widget(marker)
 
-        # for i in range(1, 10):
-        #     lat = uniform(55.13, 55.23)
-        #     lon = uniform(30.1, 30.3)
-        #     lots = int(uniform(10, 30))
-        #     av_lots = int(uniform(0, lots))
-        #
-        #     mark = {
-        #         "Lat": lat,
-        #         "Lon": lon,
-        #         "Number": self.distinct_zone_numbers(),
-        #         "Address": self.get_address(lat, lon),
-        #         "LotsNumber": lots,
-        #         "Available": av_lots,
-        #         "Lots": self.make_lots(av_lots, lots)
-        #     }
-        #     self.post_marks(mark)
+                self.buttons[i] = button
 
-        pass
-
-    def book(self, zone_number):
+    def book(self, zone_number, book_date):
         mark = self.get_mark_by_num(zone_number)
         if mark is not None and mark[1]["Available"] > 0:
             key, val = mark
@@ -183,7 +209,8 @@ class ParkingApp(MDApp):
 
             lot_data = {
                 "Lot": lot_key,
-                "Zone": zone_number
+                "Zone": zone_number,
+                "BookingDate": book_date
             }
 
             if booking is not None:
@@ -191,20 +218,95 @@ class ParkingApp(MDApp):
                 v["List"].append(lot_data)
                 booking_data = {
                     "Email": self.user["Email"],
-                    "List": v["List"]
+                    "List": v["List"],
+                    "Date": book_date,
                 }
                 self.update_booking(k, booking_data)
             else:
                 booking_data = {
                     "Email": self.user["Email"],
-                    "List": [lot_data]
+                    "List": [lot_data],
+                    "Date": book_date,
                 }
                 self.post_booking(booking_data)
 
-            # self.update_mark(key, val)
+            self.update_mark(key, val)
+            self.update_button_text(key, str(mark[1]["Available"]), mark)
 
         else:
             print("Empty parking zone!")
+
+    def cancel_booking(self, zone_number, lot_key):
+        mark = self.get_mark_by_num(zone_number)
+        lot_key = int(lot_key)
+
+        if mark is not None:
+            key, val = mark
+
+            if lot_key < len(val["Lots"]) and val["Lots"][lot_key]["Status"] == "Not available":
+
+                val["Lots"][lot_key]["Status"] = "Available"
+                mark[1]["Available"] = mark[1]["Available"] + 1
+                mark[1]["Lots"][lot_key] = val["Lots"][lot_key]
+
+                self.update_mark(key, val)
+                self.update_button_text(key, str(mark[1]["Available"]), mark)
+
+                booking = self.get_booking_by_email(self.user["Email"])
+                if booking is not None:
+                    k, v = booking
+                    for i, book in enumerate(v["List"]):
+                        if book["Lot"] == lot_key and book["Zone"] == zone_number:
+                            v["List"].pop(i)
+                            list_to_add = []
+                            if not v["List"]:
+                                list_to_add = [{
+                                    "Lot": "Empty",
+                                    "Zone": "Empty"
+                                }]
+                            else:
+                                list_to_add = v["List"]
+                            booking_data = {
+                                "Email": self.user["Email"],
+                                "List": list_to_add
+                            }
+
+                            self.update_booking(k, booking_data)
+                            break
+
+    def update_button_text(self, key, new_text, marker_i):
+        button = self.buttons[key]
+        parent_widget = button.parent
+
+        if parent_widget:
+            parent_widget.remove_widget(button)
+
+        new_button = MDFloatingActionButton(
+            icon='',
+            text=new_text,
+            font_style='H6',
+            text_color=(1, 1, 1, 1),
+            size_hint=(None, None),
+            size=('56dp', '56dp'),
+        )
+
+        label = Label(
+            text=new_button.text,
+            font_size=new_button.font_size,
+            halign='center',
+            valign='middle',
+            size_hint=(None, None),
+            size=new_button.size,
+            pos=new_button.pos,
+            color=new_button.text_color,
+        )
+
+        new_button.add_widget(label)
+
+        new_button.bind(on_release=lambda btn, marker_info=marker_i[1]: self.show_marker_info(marker_info))
+
+        parent_widget.add_widget(new_button)
+        self.buttons[key] = new_button
 
     def update_mark(self, key, mark_data):
         connection = self.db()
@@ -248,7 +350,9 @@ class ParkingApp(MDApp):
             return_num = 1
         return return_num
 
-    def show_marker_info(self, marker):
+    def show_marker_info(self, mark):
+        key, marker = self.get_mark_by_num(int(mark["Number"]))
+
         if self.marker_info_popup:  # Закрытие предыдущего экземпляра MarkerInfoPopup
             self.marker_info_popup.dismiss()
 
@@ -271,7 +375,6 @@ class ParkingApp(MDApp):
     def get_markets_in_fov(self, *args):
         print(self.mv().get_bbox())
 
-    # MapView
     def mv(self):
         map_screen = self.root.get_screen("main")
         return map_screen.ids.map_view
@@ -281,15 +384,6 @@ class ParkingApp(MDApp):
         return bookings_screen.ids.bookings_list
 
     def on_login(self, email, password):
-
-        # self.root.email_valid = self.validate_email(email)
-        # self.root.password_valid = self.validate_password(email, password)
-
-        # if not self.root.email_valid:
-        #     print("WRONG EMAIL")
-        #
-        # if not self.root.password_valid:
-        #     print("WRONG PASSWORD")
 
         if self.validate_email(email) and self.validate_password(email, password):
             print(email + " Вы вошли!")
@@ -422,20 +516,22 @@ class ParkingApp(MDApp):
 
     def open_bookings(self):
         booking_list = self.get_booking_by_email(self.user["Email"])
-        key, val = booking_list
-        self.bkgs().clear_widgets()
 
-        for item in val["List"]:
-            lot = str(item["Lot"])
-            zone = item["Zone"]
-            # date = item["Date"]
-            date = "04.06.23"
+        if booking_list is not None:
+            key, val = booking_list
+            self.bkgs().clear_widgets()
 
-            booking_text = f'Зона: {zone}, Место №: {lot}, Дата: {date}'
-            booking_item = OneLineListItem(text=booking_text)
-            booking_item.bind(on_release=lambda instance: self.show_booking_info(zone, lot, date))
+            for item in val["List"]:
+                if item["Zone"] != "Empty":
+                    lot = str(item["Lot"])
+                    zone = item["Zone"]
+                    date = item["BookingDate"]
 
-            self.bkgs().add_widget(booking_item)
+                    booking_text = f'Зона: {zone}, Место №: {lot}, Дата: {date}'
+                    booking_item = OneLineListItem(text=booking_text)
+                    booking_item.bind(on_release=lambda instance: self.show_booking_info(zone, lot, date))
+
+                    self.bkgs().add_widget(booking_item)
 
         self.root.transition.direction = "left"
         self.root.current = "bookings"
@@ -444,13 +540,16 @@ class ParkingApp(MDApp):
         popup = BookingInfoPopup(self, zone=zone, lot=lot, date=date)
         popup.open()
 
+    def update_map(self):
+        self.mv().clear_markers()
+        # self.open_map()
+
     def update_bookings_list(self):
         self.bkgs().clear_widgets()
         self.open_bookings()
 
-    def cancel_booking(self, bookings):
-        print("CANCELLING")
-        pass
+    def get_available_lots_number(self, zone_number):
+        return self.get_mark_by_num(zone_number)[1]["Available"]
 
 
 if __name__ == "__main__":

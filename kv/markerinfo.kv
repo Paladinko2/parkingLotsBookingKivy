@@ -62,14 +62,30 @@
             #        width: "20dp"
             #        size_hint_x: None
 
+
+
         MDBoxLayout:
             padding: dp(10)
             spacing: dp(10)
+            orientation: 'vertical'
 
             MDFillRoundFlatButton:
-                text: 'Забронировать'
-                on_release: root.book(root.zone_number)
+                text: 'Выбрать дату'
+                pos_hint: {"center_x": .5, "center_y": .5}
+                on_release:
+                    root.show_datepicker()
 
-            MDFillRoundFlatButton:
-                text: 'Закрыть'
-                on_release: root.dismiss()
+            MDBoxLayout:
+                padding: dp(10)
+                spacing: dp(10)
+                orientation: 'horizontal'
+
+                MDFillRoundFlatButton:
+                    text: 'Забронировать'
+                    on_release:
+                        root.book(root.zone_number)
+                        root.av_lots = str(app.get_available_lots_number(root.zone_number))
+
+                MDFillRoundFlatButton:
+                    text: 'Закрыть'
+                    on_release: root.dismiss()
