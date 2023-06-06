@@ -1,36 +1,22 @@
 import datetime
-
 import re
-from random import random, uniform, choice
-
-from kivy.properties import StringProperty
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
-from kivy.uix.popup import Popup
-from kivy.uix.recycleview import RecycleView
-from kivymd.app import MDApp
-from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.button import MDFlatButton, MDFillRoundFlatButton, MDFloatingActionButton, MDIconButton
-from kivymd.uix.dialog import MDDialog
-from kivymd.uix.label import MDLabel
-from kivy.core.window import Window
-from kivy.uix.screenmanager import ScreenManager
-from kivy.core.text import LabelBase
-from kivy.lang import Builder
-from kivymd.uix.list import OneLineListItem
-from kivymd.uix.pickers import MDDatePicker, MDTimePicker
-from kivy_garden.mapview import MapView, MapMarkerPopup
-from kivymd.uix.navigationdrawer import MDNavigationDrawerItem
-from kivy.clock import Clock
-from kivymd.font_definitions import theme_font_styles
+from random import choice
 
 from firebase import firebase
-
 from geopy.geocoders import Nominatim
-
-from kivy.uix.screenmanager import Screen
+from kivy.clock import Clock
+from kivy.core.text import LabelBase
+from kivy.core.window import Window
+from kivy.lang import Builder
+from kivy.properties import StringProperty
+from kivy.uix.label import Label
+from kivy.uix.screenmanager import ScreenManager
+from kivy_garden.mapview import MapMarkerPopup
+from kivymd.app import MDApp
+from kivymd.uix.button import MDFloatingActionButton
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.list import OneLineListItem
+from kivymd.uix.pickers import MDDatePicker
 
 
 class MarkerInfoPopup(MDDialog):
@@ -70,7 +56,6 @@ class MarkerInfoPopup(MDDialog):
     def on_save(self, instance, value, date_range):
         self.date = value
         self.range = date_range
-        # print(instance, value, date_range)
 
     def on_cancel(self, instance, value):
         pass
@@ -116,15 +101,11 @@ class ParkingApp(MDApp):
         Builder.load_file("kv/bookinginfo.kv")
 
         screen_manager = ScreenManager()
-        # screen_manager.add_widget(Builder.load_file("kv/welcome.kv"))
-        # screen_manager.add_widget(Builder.load_file("kv/login.kv"))
-        # screen_manager.add_widget(Builder.load_file("kv/signup.kv"))
+        screen_manager.add_widget(Builder.load_file("kv/welcome.kv"))
+        screen_manager.add_widget(Builder.load_file("kv/login.kv"))
+        screen_manager.add_widget(Builder.load_file("kv/signup.kv"))
         screen_manager.add_widget(Builder.load_file("kv/main.kv"))
         screen_manager.add_widget(Builder.load_file("kv/bookings.kv"))
-
-        # screen_manager.add_widget(Builder.load_file("kv/test.kv"))
-
-        # mapview = MapView(zoom=11, lat=50.6394, lon=3.057)
 
         return screen_manager
 
@@ -132,9 +113,9 @@ class ParkingApp(MDApp):
 
         self.open_map()
 
-        # for i in range(1, 10):
-        #     lat = uniform(55.13, 55.23)
-        #     lon = uniform(30.1, 30.3)
+        # for i in range(1, 50):
+        #     lat = uniform(55.17922, 55.18157)
+        #     lon = uniform(30.14024, 30.14813)
         #     lots = int(uniform(10, 30))
         #     av_lots = int(uniform(0, lots))
         #
@@ -145,9 +126,10 @@ class ParkingApp(MDApp):
         #         "Address": self.get_address(lat, lon),
         #         "LotsNumber": lots,
         #         "Available": av_lots,
-        #         "Lots": self.make_lots(av_lots, lots)
+        #         "Lots": self.make_lots(av_lots, lots),
+        #         "Test": 1,
         #     }
-        #     self.post_marks(mark)
+        #     self.post_mark(mark)
 
         pass
 
@@ -376,8 +358,7 @@ class ParkingApp(MDApp):
         print(self.mv().get_bbox())
 
     def mv(self):
-        map_screen = self.root.get_screen("main")
-        return map_screen.ids.map_view
+        return self.ms().ids.map_view
 
     def bkgs(self):
         bookings_screen = self.root.get_screen("bookings")
@@ -385,7 +366,7 @@ class ParkingApp(MDApp):
 
     def on_login(self, email, password):
 
-        if self.validate_email(email) and self.validate_password(email, password):
+        if self.correct_email(email) and self.correct_password(email, password):
             print(email + " Вы вошли!")
             self.user = {
                 "Email": email,
@@ -403,19 +384,8 @@ class ParkingApp(MDApp):
 
         validRegistration = True
 
-        # Проверка длины пароля
-        if len(password) < 4 or len(password) > 20:
-            validRegistration = False
+        validRegistration = self.validate_password(password)
 
-        # Проверка наличия заглавной, строчной буквы и цифры
-        if not re.search(r"[A-Z]", password):
-            validRegistration = False
-        if not re.search(r"[a-z]", password):
-            validRegistration = False
-        if not re.search(r"\d", password):
-            validRegistration = False
-
-        # Проверка на то, совпадают ли введённые пароли при регистрации
         if password != rep_password:
             validRegistration = False
 
@@ -438,6 +408,20 @@ class ParkingApp(MDApp):
             self.root.current = "main"
         else:
             print("Ошибка регистрации!")
+
+    def validate_password(self, password):
+        validRegistration = True
+
+        if len(password) < 4 or len(password) > 20:
+            validRegistration = False
+
+        if not re.search(r"[A-Z]", password):
+            validRegistration = False
+        if not re.search(r"[a-z]", password):
+            validRegistration = False
+        if not re.search(r"\d", password):
+            validRegistration = False
+        return validRegistration
 
     def db(self):
         return firebase.FirebaseApplication(
@@ -476,12 +460,12 @@ class ParkingApp(MDApp):
         emails = [user['Email'] for user in users.values()]
         return emails
 
-    def validate_email(self, email):
+    def correct_email(self, email):
         emails = self.get_emails()
         self.root.email_valid = email in emails or email == "admin"
         return self.root.email_valid
 
-    def validate_password(self, email, password):
+    def correct_password(self, email, password):
         users = self.get_users()
         for i in users.keys():
             if users[i] is not None and users[i]["Email"] == email:
@@ -550,6 +534,15 @@ class ParkingApp(MDApp):
 
     def get_available_lots_number(self, zone_number):
         return self.get_mark_by_num(zone_number)[1]["Available"]
+
+    def ms(self):
+        return self.root.get_screen("main")
+
+    def change_label_text(self):
+        print("CHANGING TEXT")
+        print(self.ms().ids.label_name.text)
+        self.ms().ids.label_name.text = self.user["Email"]
+        print(self.ms().ids.label_name.text)
 
 
 if __name__ == "__main__":

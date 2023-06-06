@@ -50,7 +50,7 @@ MDScreen:
                             title: "Главная"
                             icon: "magnify-plus"
                             type: "bottom"
-                            left_action_items: [["menu", lambda x: nav_drawer.set_state("open")]]
+                            #left_action_items: [["menu", lambda x: nav_drawer.set_state("open")]]
                             on_action_button: app.callback(self.icon)
                             mode: "end"
                             elevation: 2
@@ -76,7 +76,8 @@ MDScreen:
                     font_size: "96sp"
 
                 MDLabel:
-                    text: app.user["Email"]
+                    id: label_name
+                    text: ""
                     font_name: "Montserrat"
                     font_size: "18sp"
                     bold: True
