@@ -1,6 +1,6 @@
 import datetime
 import re
-from random import choice
+from random import choice, uniform
 
 from firebase import firebase
 from geopy.geocoders import Nominatim
@@ -8,15 +8,19 @@ from kivy.clock import Clock
 from kivy.core.text import LabelBase
 from kivy.core.window import Window
 from kivy.lang import Builder
+from kivy.metrics import dp
 from kivy.properties import StringProperty
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
-from kivy.uix.screenmanager import ScreenManager
+from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy_garden.mapview import MapMarkerPopup
 from kivymd.app import MDApp
-from kivymd.uix.button import MDFloatingActionButton
+from kivymd.uix.button import MDFloatingActionButton, MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.list import OneLineListItem
 from kivymd.uix.pickers import MDDatePicker
+from kivymd.uix.screen import MDScreen
+from kivymd.uix.textfield import MDTextField
 
 
 class MarkerInfoPopup(MDDialog):
@@ -41,11 +45,7 @@ class MarkerInfoPopup(MDDialog):
         self.dismiss()
 
     def show_datepicker(self):
-        picker = MDDatePicker(min_date=datetime.date.today(), max_date=datetime.date(
-            datetime.date.today().year,
-            datetime.date.today().month,
-            datetime.date.today().day + 7,
-        ))
+        picker = MDDatePicker()
         picker.bind(on_save=self.on_save, on_cancel=self.on_cancel)
         picker.open()
 
@@ -83,11 +83,13 @@ class BookingInfoPopup(MDDialog):
 
 
 class ParkingApp(MDApp):
+    db_link = "https://parkinglotsbookingkivynew-default-rtdb.europe-west1.firebasedatabase.app/"
     getting_markets_timer = None
     marker_info_popup = None
     user = {
         "Email": "admin",
-        "Password": "admin"
+        "Password": "admin",
+        "RegistrationDateTime": "none"
     }
     buttons = {}
 
@@ -101,11 +103,14 @@ class ParkingApp(MDApp):
         Builder.load_file("kv/bookinginfo.kv")
 
         screen_manager = ScreenManager()
+
         screen_manager.add_widget(Builder.load_file("kv/welcome.kv"))
         screen_manager.add_widget(Builder.load_file("kv/login.kv"))
         screen_manager.add_widget(Builder.load_file("kv/signup.kv"))
         screen_manager.add_widget(Builder.load_file("kv/main.kv"))
         screen_manager.add_widget(Builder.load_file("kv/bookings.kv"))
+        screen_manager.add_widget(Builder.load_file("kv/accountinfo.kv"))
+
 
         return screen_manager
 
@@ -113,9 +118,9 @@ class ParkingApp(MDApp):
 
         self.open_map()
 
-        # for i in range(1, 50):
-        #     lat = uniform(55.17922, 55.18157)
-        #     lon = uniform(30.14024, 30.14813)
+        # for i in range(1, 15):
+        #     lat = uniform(55.14992, 55.22977)
+        #     lon = uniform(30.16737, 30.26140)
         #     lots = int(uniform(10, 30))
         #     av_lots = int(uniform(0, lots))
         #
@@ -216,7 +221,19 @@ class ParkingApp(MDApp):
             self.update_button_text(key, str(mark[1]["Available"]), mark)
 
         else:
-            print("Empty parking zone!")
+            self.show_popup("Свободных мест нет!")
+
+    def show_popup(self, text, title="Ошибка"):
+        dialog = MDDialog(
+            title=title,
+            text=text,
+            buttons=[
+                MDFlatButton(
+                    text="Закрыть", on_release=lambda *args: dialog.dismiss()
+                )
+            ],
+        )
+        dialog.open()
 
     def cancel_booking(self, zone_number, lot_key):
         mark = self.get_mark_by_num(zone_number)
@@ -292,13 +309,15 @@ class ParkingApp(MDApp):
 
     def update_mark(self, key, mark_data):
         connection = self.db()
-        connection.put("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Marks",
-                       key, mark_data)
+        connection.put(self.db_link + "Marks", key, mark_data)
+
+    def update_user(self, key, user_data):
+        connection = self.db()
+        connection.put(self.db_link + "Users", key, user_data)
 
     def get_bookings(self):
         connection = self.db()
-        bookings = connection.get("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app"
-                                  "/Bookings", "")
+        bookings = connection.get(self.db_link + "/Bookings", "")
         return bookings
 
     def get_booking_by_email(self, email):
@@ -310,13 +329,11 @@ class ParkingApp(MDApp):
 
     def post_booking(self, booking_data):
         connection = self.db()
-        connection.post("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Bookings",
-                        booking_data)
+        connection.post(self.db_link + "Bookings", booking_data)
 
     def update_booking(self, key, booking_data):
         connection = self.db()
-        connection.put("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Bookings", key,
-                       booking_data)
+        connection.put(self.db_link + "Bookings", key, booking_data)
 
     def distinct_zone_numbers(self):
         marks = self.get_marks()
@@ -367,14 +384,14 @@ class ParkingApp(MDApp):
     def on_login(self, email, password):
 
         if self.correct_email(email) and self.correct_password(email, password):
-            print(email + " Вы вошли!")
+            # print(email + " Вы вошли!")
             self.user = {
                 "Email": email,
                 "Password": password
             }
             self.root.current = "main"
         else:
-            print("Ошибка входа")
+            self.show_popup("Ошибка входа")
             self.root.email_valid = False
             self.root.password_valid = False
 
@@ -386,12 +403,15 @@ class ParkingApp(MDApp):
 
         validRegistration = self.validate_password(password)
 
+
         if password != rep_password:
             validRegistration = False
 
         # Проверка на то, зарегистрирован ли уже пользователь с введённой почтой
-        if email in emails:
-            validRegistration = False
+        if emails is not None:
+            if email in emails:
+                validRegistration = False
+
 
         if validRegistration:
             user_data = {
@@ -407,7 +427,27 @@ class ParkingApp(MDApp):
             }
             self.root.current = "main"
         else:
-            print("Ошибка регистрации!")
+            self.show_popup("Ошибка регистрации!")
+
+    def change_password(self, new_password, repeat_password):
+        users = self.get_users()
+
+        if new_password == repeat_password:
+            if users is not None:
+                for key, user in users.items():
+                    if user["Email"] == self.user["Email"]:
+                        if user["Password"] == new_password:
+                            self.show_popup("Старый и новый пароли не могут совпадать")
+                        else:
+                            if self.validate_password(new_password):
+                                user["Password"] = new_password
+                                self.update_user(key, user)
+                                self.show_popup("Пароль был успешно изменён", "Успех")
+                            else:
+                                self.show_popup("Пароль должен содержать буквы разных регистров и цифры. \nДлина должна быть больше 3-х символов.")
+                        break
+        else:
+            self.show_popup("Введённые пароли не совпадают")
 
     def validate_password(self, password):
         validRegistration = True
@@ -424,19 +464,16 @@ class ParkingApp(MDApp):
         return validRegistration
 
     def db(self):
-        return firebase.FirebaseApplication(
-            "https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/", None)
+        return firebase.FirebaseApplication(self.db_link, None)
 
     def get_users(self):
         connection = self.db()
-        users = connection.get("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Users",
-                               "")
+        users = connection.get(self.db_link + "Users", "")
         return users
 
     def get_marks(self):
         connection = self.db()
-        marks = connection.get("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Marks",
-                               "")
+        marks = connection.get(self.db_link + "Marks", "")
         return marks
 
     def get_mark_by_num(self, num):
@@ -447,17 +484,19 @@ class ParkingApp(MDApp):
 
     def post_user(self, user_data):
         connection = self.db()
-        connection.post("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Users",
-                        user_data)
+        connection.post(self.db_link + "Users", user_data)
 
     def post_mark(self, mark_data):
         connection = self.db()
-        connection.post("https://parkinglotsbookingkivy-default-rtdb.europe-west1.firebasedatabase.app/Marks",
+        connection.post(self.db_link + "Marks",
                         mark_data)
 
     def get_emails(self):
         users = self.get_users()
-        emails = [user['Email'] for user in users.values()]
+        if users is not None:
+            emails = [user['Email'] for user in users.values()]
+        else:
+            emails = None
         return emails
 
     def correct_email(self, email):
@@ -474,6 +513,10 @@ class ParkingApp(MDApp):
                     return True
         self.root.password_valid = False
         return False
+
+    def go_to_account(self):
+        self.root.transition.direction = "left"
+        self.root.current = "account"
 
     def get_address(self, latitude, longitude):
         geolocator = Nominatim(user_agent="my_app")  # Создаем экземпляр геокодера
@@ -539,7 +582,6 @@ class ParkingApp(MDApp):
         return self.root.get_screen("main")
 
     def change_label_text(self):
-        print("CHANGING TEXT")
         print(self.ms().ids.label_name.text)
         self.ms().ids.label_name.text = self.user["Email"]
         print(self.ms().ids.label_name.text)

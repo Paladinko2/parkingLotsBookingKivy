@@ -1,0 +1,34 @@
+MDScreen:
+    name: "account"
+
+    MDBoxLayout:
+        orientation: "vertical"
+
+        MDTopAppBar:
+            title: "Редактировать аккаунт"
+            left_action_items: [["arrow-left", lambda x: app.go_to_main_screen()]]
+            elevation: 2
+            size_hint_y: None
+            height: "48dp"
+
+        MDBoxLayout:
+            orientation: "vertical"
+            padding: dp(20)
+
+            MDTextField:
+                id: new_password
+                hint_text: "Новый пароль"
+                helper_text_mode: "on_focus"
+                icon_right: "key-variant"
+                password: True
+
+            MDTextField:
+                id: repeat_password
+                hint_text: "Повторите пароль"
+                helper_text_mode: "on_focus"
+                icon_right: "key-variant"
+                password: True
+
+            MDFillRoundFlatButton:
+                text: "Изменить"
+                on_release: app.change_password(new_password.text, repeat_password.text)

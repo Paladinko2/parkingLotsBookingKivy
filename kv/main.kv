@@ -19,10 +19,10 @@ MDScreen:
                         zoom: 14
                         double_tap_zoom: True
 
-                        on_lat:
-                            app.start_getting_markets_in_fov()
-                        on_lon:
-                            app.start_getting_markets_in_fov()
+                        #on_lat:
+                        #    app.start_getting_markets_in_fov()
+                        #on_lon:
+                        #    app.start_getting_markets_in_fov()
 
                         on_zoom:
                             self.zoom = 10 if self.zoom < 10 else self.zoom
@@ -34,7 +34,7 @@ MDScreen:
                             icon: "magnify-plus"
                             type: "bottom"
                             left_action_items: [["menu", lambda x: nav_drawer.set_state("open")]]
-                            on_action_button: app.callback(self.icon)
+                            on_action_button: nav_drawer.set_state("open")
                             mode: "end"
                             elevation: 2
 
@@ -89,6 +89,9 @@ MDScreen:
                     MDList:
                         OneLineIconListItem:
                             text: "Аккаунт"
+                            on_release:
+                                nav_drawer.set_state("close")
+                                app.go_to_account()
                             IconLeftWidget:
                                 icon: "account"
 
